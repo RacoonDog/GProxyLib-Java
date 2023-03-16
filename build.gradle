@@ -1,0 +1,14 @@
+plugins {
+    id 'java'
+}
+
+group 'io.github.racoondog.gproxylib'
+version '1.0-SNAPSHOT'
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    implementation 'org.jetbrains:annotations:23.1.0'
+}
