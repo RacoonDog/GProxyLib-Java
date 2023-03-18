@@ -81,7 +81,7 @@ public class GProxyScraper {
                 try {
                     return future.get(timeoutMillis, TimeUnit.MILLISECONDS);
                 } catch (ExecutionException | InterruptedException | TimeoutException e) {
-                    throw new RuntimeException(e);
+                    return new ArrayList<GProxy>();
                 }
             }).filter(Objects::nonNull).flatMap(Collection::stream).toList();
         });
