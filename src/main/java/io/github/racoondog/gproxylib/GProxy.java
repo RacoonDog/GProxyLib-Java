@@ -1,10 +1,12 @@
 package io.github.racoondog.gproxylib;
 
 
+import io.github.racoondog.gproxylib.enums.Protocol;
 import org.jetbrains.annotations.Nullable;
 
 import java.net.InetSocketAddress;
 import java.net.Proxy;
+import java.net.http.HttpClient;
 import java.util.Objects;
 
 public final class GProxy {
@@ -15,6 +17,8 @@ public final class GProxy {
     private Proxy proxy = null;
     @Nullable
     private InetSocketAddress address = null;
+    @Nullable
+    private HttpClient client = null;
 
     public GProxy(String ip, int port, Protocol type) {
         if (port < 0 || port > 0xFFFF) throw new IllegalArgumentException("Port out of range: " + port);
@@ -24,14 +28,25 @@ public final class GProxy {
         this.type = type;
     }
 
+    public InetSocketAddress getAddress() {
+        if (address == null) address = new InetSocketAddress(ip, port);
+        return address;
+    }
+
+    public boolean isUnresolved() {
+        return getAddress().isUnresolved();
+    }
+
     public Proxy asProxy() {
         if (proxy == null) proxy = new Proxy(type.type, getAddress());
         return proxy;
     }
 
-    public InetSocketAddress getAddress() {
-        if (address == null) address = new InetSocketAddress(ip, port);
-        return address;
+    public HttpClient createClient() {
+        if (client == null) client = HttpClient.newBuilder()
+                .proxy(new SimpleProxySelector(asProxy()))
+                .build();
+        return client;
     }
 
     @Override

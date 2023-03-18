@@ -1,4 +1,4 @@
-package io.github.racoondog.gproxylib;
+package io.github.racoondog.gproxylib.enums;
 
 import java.net.Proxy;
 

@@ -1,11 +1,9 @@
 package io.github.racoondog.gproxylib.tester;
 
 import io.github.racoondog.gproxylib.GProxy;
-import io.github.racoondog.gproxylib.SimpleProxySelector;
 
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.time.Duration;
@@ -17,8 +15,8 @@ import java.util.concurrent.*;
 
 public class GProxyTester {
     private final Iterable<GProxy> proxies;
-    private final URI testUri;
-    private final int timeout;
+    private final HttpRequest request;
+    private final long timeout;
     private final ExecutorService executor;
 
     public GProxyTester(Iterable<GProxy> proxies, String testUrl) {
@@ -29,18 +27,19 @@ public class GProxyTester {
         this(proxies, testUrl, threads, 5);
     }
 
-    public GProxyTester(Iterable<GProxy> proxies, String testUrl, int threads, int timeout) {
+    public GProxyTester(Iterable<GProxy> proxies, String testUrl, int threads, long timeout) {
         if (threads < 0) throw new IllegalArgumentException("Threads out of range: " + threads);
-        Objects.requireNonNull(proxies);
-        Objects.requireNonNull(testUrl);
 
         try {
-            this.testUri = new URI(testUrl);
+            this.request = HttpRequest.newBuilder(new URI(Objects.requireNonNull(testUrl)))
+                    .timeout(Duration.of(timeout, ChronoUnit.SECONDS))
+                    .GET()
+                    .build();
         } catch (URISyntaxException e) {
             throw new IllegalArgumentException(e);
         }
 
-        this.proxies = proxies;
+        this.proxies = Objects.requireNonNull(proxies);
         this.executor = Executors.newFixedThreadPool(threads);
         this.timeout = timeout;
     }
@@ -73,17 +72,10 @@ public class GProxyTester {
     }
 
     public GProxy testProxy(GProxy proxy) {
-        HttpClient client = HttpClient.newBuilder()
-                .proxy(new SimpleProxySelector(proxy.asProxy()))
-                .connectTimeout(Duration.of(timeout, ChronoUnit.SECONDS))
-                .build();
-
-        HttpRequest request = HttpRequest.newBuilder(testUri)
-                .GET()
-                .build();
+        if (proxy.isUnresolved()) return null;
 
         try {
-            HttpResponse<Void> response = client.send(request, HttpResponse.BodyHandlers.discarding());
+            HttpResponse<Void> response = proxy.createClient().send(request, HttpResponse.BodyHandlers.discarding());
             return response.statusCode() == 200 ? proxy : null;
         } catch (Throwable t) {
             return null;
