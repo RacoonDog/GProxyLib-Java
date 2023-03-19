@@ -9,7 +9,7 @@ import java.net.URISyntaxException;
 public class CustomScraperBuilder extends GProxyScraperBuilder {
     private final URI uri;
 
-    public CustomScraperBuilder(String url, Protocol protocol, int timeoutMillis) {
+    public CustomScraperBuilder(String url, Protocol protocol, long timeoutMillis) {
         super(protocol, timeoutMillis);
 
         try {

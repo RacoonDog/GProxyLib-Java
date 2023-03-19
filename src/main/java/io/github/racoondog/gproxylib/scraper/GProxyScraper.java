@@ -23,9 +23,9 @@ public class GProxyScraper {
     protected final HttpRequest request;
     protected final Protocol targetType;
     protected final HttpClient client;
-    protected final int timeoutMillis;
+    protected final long timeoutMillis;
 
-    public GProxyScraper(URI targetUri, Protocol targetType, int timeoutMillis) {
+    public GProxyScraper(URI targetUri, Protocol targetType, long timeoutMillis) {
         this.timeoutMillis = timeoutMillis;
         Duration timeout = Duration.ofMillis(timeoutMillis);
 
@@ -42,19 +42,19 @@ public class GProxyScraper {
         this.targetType = targetType;
     }
 
-    public static CompletableFuture<List<GProxy>> scrapeDefault(Protocol protocol, int timeoutMillis, CountryCode countryCode) {
+    public static CompletableFuture<List<GProxy>> scrapeDefault(Protocol protocol, long timeoutMillis, CountryCode countryCode) {
         return scrapeDefault(protocol, timeoutMillis, countryCode, false, Anonymity.Any);
     }
 
-    public static CompletableFuture<List<GProxy>> scrapeDefault(Protocol protocol, int timeoutMillis, CountryCode countryCode, Anonymity anonymity) {
+    public static CompletableFuture<List<GProxy>> scrapeDefault(Protocol protocol, long timeoutMillis, CountryCode countryCode, Anonymity anonymity) {
         return scrapeDefault(protocol, timeoutMillis, countryCode, false, anonymity);
     }
 
-    public static CompletableFuture<List<GProxy>> scrapeDefault(Protocol protocol, int timeoutMillis, CountryCode countryCode, boolean ssl) {
+    public static CompletableFuture<List<GProxy>> scrapeDefault(Protocol protocol, long timeoutMillis, CountryCode countryCode, boolean ssl) {
         return scrapeDefault(protocol, timeoutMillis, countryCode, ssl, Anonymity.Any);
     }
 
-    public static CompletableFuture<List<GProxy>> scrapeDefault(Protocol protocol, int timeoutMillis, CountryCode countryCode, boolean ssl, Anonymity anonymity) {
+    public static CompletableFuture<List<GProxy>> scrapeDefault(Protocol protocol, long timeoutMillis, CountryCode countryCode, boolean ssl, Anonymity anonymity) {
         ExecutorService executor = Executors.newSingleThreadExecutor();
 
         return CompletableFuture.supplyAsync(() -> {
@@ -106,7 +106,7 @@ public class GProxyScraper {
     public static class GeonodeScraper extends GProxyScraper {
         private static final Gson GSON = new GsonBuilder().create();
 
-        public GeonodeScraper(URI targetUri, Protocol targetType, int timeout) {
+        public GeonodeScraper(URI targetUri, Protocol targetType, long timeout) {
             super(targetUri, targetType, timeout);
         }
 

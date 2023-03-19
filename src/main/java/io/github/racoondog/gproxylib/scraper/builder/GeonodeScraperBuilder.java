@@ -14,7 +14,7 @@ public class GeonodeScraperBuilder extends GProxyScraperBuilder {
     private int limit = 500;
     private int page = 1;
 
-    public GeonodeScraperBuilder(Protocol protocol, int timeoutMillis) {
+    public GeonodeScraperBuilder(Protocol protocol, long timeoutMillis) {
         super(protocol, timeoutMillis);
 
         requestUrlBuilder.append(switch (protocol) {
@@ -57,7 +57,7 @@ public class GeonodeScraperBuilder extends GProxyScraperBuilder {
     }
 
     public GeonodeScraperBuilder country(CountryCode countryCode) {
-        requestUrlBuilder.append("&country=").append(countryCode.name());
+        if (countryCode != CountryCode.Any) requestUrlBuilder.append("&country=").append(countryCode.name());
         return this;
     }
 

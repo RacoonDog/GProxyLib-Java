@@ -12,7 +12,7 @@ public class ProxyScrapeScraperBuilder extends GProxyScraperBuilder {
     private static final String PROXY_SCRAPE_REQUEST_URL = "https://api.proxyscrape.com/v2/?request=getproxies";
     private final StringBuilder requestUrlBuilder = new StringBuilder(PROXY_SCRAPE_REQUEST_URL);
 
-    public ProxyScrapeScraperBuilder(Protocol protocol, int timeoutMillis) {
+    public ProxyScrapeScraperBuilder(Protocol protocol, long timeoutMillis) {
         super(protocol, timeoutMillis);
         requestUrlBuilder.append("&timeout=").append(timeoutMillis);
 
@@ -42,7 +42,7 @@ public class ProxyScrapeScraperBuilder extends GProxyScraperBuilder {
     }
 
     public ProxyScrapeScraperBuilder country(CountryCode countryCode) {
-        requestUrlBuilder.append("&country=").append(countryCode.name());
+        if (countryCode != CountryCode.Any) requestUrlBuilder.append("&country=").append(countryCode.name());
         return this;
     }
 
