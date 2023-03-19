@@ -6,25 +6,16 @@ import io.github.racoondog.gproxylib.enums.Anonymity;
 import io.github.racoondog.gproxylib.enums.CountryCode;
 import io.github.racoondog.gproxylib.enums.Protocol;
 import io.github.racoondog.gproxylib.scraper.builder.GProxyScraperBuilder;
-import org.jetbrains.annotations.Nullable;
 
 import java.io.IOException;
 import java.net.URI;
-import java.net.URISyntaxException;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.time.Duration;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
-import java.util.Objects;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
-import java.util.function.Supplier;
-import java.util.stream.Collectors;
+import java.util.concurrent.*;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
@@ -64,30 +55,36 @@ public class GProxyScraper {
     }
 
     public static CompletableFuture<List<GProxy>> scrapeDefault(Protocol protocol, int timeoutMillis, CountryCode countryCode, boolean ssl, Anonymity anonymity) {
+        ExecutorService executor = Executors.newSingleThreadExecutor();
+
         return CompletableFuture.supplyAsync(() -> {
             List<CompletableFuture<List<GProxy>>> list = List.of(
                     GProxyScraperBuilder.setupProxyScrape(protocol, timeoutMillis)
                             .country(countryCode)
                             .ssl(ssl)
                             .anonymity(anonymity)
-                            .build().scrape(),
+                            .build().scrape(executor),
                     GProxyScraperBuilder.setupGeonode(protocol, timeoutMillis)
                             .country(countryCode)
                             .anonymity(anonymity)
-                            .build().scrape()
+                            .build().scrape(executor)
             );
 
-            return list.stream().map(future -> {
-                try {
-                    return future.get(timeoutMillis, TimeUnit.MILLISECONDS);
-                } catch (ExecutionException | InterruptedException | TimeoutException e) {
-                    return new ArrayList<GProxy>();
-                }
-            }).filter(Objects::nonNull).flatMap(Collection::stream).toList();
+            try {
+                executor.awaitTermination(timeoutMillis, TimeUnit.MILLISECONDS);
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+            }
+
+            return list.stream().filter(CompletableFuture::isDone).map(CompletableFuture::join).collect(ArrayList::new, ArrayList::addAll, ArrayList::addAll);
         });
     }
 
     public CompletableFuture<List<GProxy>> scrape() {
+        return scrape(Runnable::run);
+    }
+
+    public CompletableFuture<List<GProxy>> scrape(Executor executor) {
         return CompletableFuture.supplyAsync(() -> {
             try {
                 HttpResponse<Stream<String>> response = client.send(request, HttpResponse.BodyHandlers.ofLines());
@@ -103,7 +100,7 @@ public class GProxyScraper {
             }
 
             return List.of();
-        });
+        }, executor);
     }
 
     public static class GeonodeScraper extends GProxyScraper {
@@ -114,7 +111,7 @@ public class GProxyScraper {
         }
 
         @Override
-        public CompletableFuture<List<GProxy>> scrape() {
+        public CompletableFuture<List<GProxy>> scrape(Executor executor) {
             return CompletableFuture.supplyAsync(() -> {
                 try {
                     HttpResponse<String> reponse = client.send(request, HttpResponse.BodyHandlers.ofString());
@@ -142,7 +139,7 @@ public class GProxyScraper {
                 }
 
                 return List.of();
-            });
+            }, executor);
         }
     }
 }
